@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOTH · LinkedIn CRM</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg2: #f7f6f3;
+    --bg3: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a1a;
+    --text2: #666;
+    --text3: #999;
+    --accent: #1a1a1a;
+    --r-bg: #EEEDFE; --r-txt: #3C3489;
+    --m-bg: #FAECE7; --m-txt: #712B13;
+    --cold-bg: #F1EFE8; --cold-txt: #5F5E5A;
+    --cont-bg: #E6F1FB; --cont-txt: #185FA5;
+    --warm-bg: #FAEEDA; --warm-txt: #854F0B;
+    --int-bg: #EAF3DE; --int-txt: #3B6D11;
+    --conv-bg: #E1F5EE; --conv-txt: #0F6E56;
+    --red: #E24B4A; --amber: #EF9F27; --green: #1D9E75;
+    --radius: 8px; --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg2); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  /* AUTH SCREEN */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .auth-card { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 2rem; max-width: 480px; width: 100%; }
+  .auth-logo { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 0.3rem; }
+  .auth-sub { font-size: 13px; color: var(--text2); margin-bottom: 1.5rem; }
+  .auth-section { margin-bottom: 1.25rem; }
+  .auth-section h3 { font-size: 13px; font-weight: 500; margin-bottom: 0.5rem; }
+  .auth-section p { font-size: 12px; color: var(--text2); margin-bottom: 0.5rem; line-height: 1.5; }
+  .auth-section code { font-family: monospace; font-size: 11px; background: var(--bg2); padding: 2px 5px; border-radius: 4px; }
+  .auth-section a { color: #185FA5; text-decoration: none; font-size: 12px; }
+  .auth-section a:hover { text-decoration: underline; }
+
+  /* LAYOUT */
+  #app { display: none; min-height: 100vh; }
+  .topbar { background: var(--bg); border-bottom: 0.5px solid var(--border); padding: 0 1.25rem; display: flex; align-items: center; gap: 12px; height: 52px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; margin-right: 8px; }
+  .nav-tabs { display: flex; gap: 2px; }
+  .nav-tab { padding: 6px 12px; border-radius: var(--radius); border: none; background: none; color: var(--text2); font-size: 13px; cursor: pointer; }
+  .nav-tab:hover { background: var(--bg2); color: var(--text); }
+  .nav-tab.on { background: var(--bg3); color: var(--text); font-weight: 500; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .owner-btn { padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border2); font-size: 12px; cursor: pointer; font-weight: 500; background: var(--bg); }
+  .owner-btn.r { background: var(--r-bg); color: var(--r-txt); border-color: var(--r-txt); }
+  .owner-btn.m { background: var(--m-bg); color: var(--m-txt); border-color: var(--m-txt); }
+  .timer-pill { padding: 5px 11px; border-radius: 20px; background: var(--bg2); border: 0.5px solid var(--border); font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .timer-pill.running { background: #E1F5EE; color: #0F6E56; border-color: #5DCAA5; }
+  .timer-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .sync-txt { font-size: 11px; color: var(--text3); }
+
+  /* MAIN */
+  .main { max-width: 780px; margin: 0 auto; padding: 1.25rem; }
+  .pane { display: none; }
+  .pane.on { display: block; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 1.25rem; }
+  .stat { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px; text-align: center; }
+  .stat-n { font-size: 22px; font-weight: 500; }
+  .stat-l { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+  /* FILTER BAR */
+  .fbar { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .fbar select, .fbar input { font-size: 13px; padding: 6px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); }
+  .fbar input { flex: 1; min-width: 130px; }
+
+  /* PROSPECT CARDS */
+  .card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; margin-bottom: 9px; box-shadow: var(--shadow); }
+  .card.od { border-left: 2px solid var(--red); }
+  .card.soon { border-left: 2px solid var(--amber); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-name { font-size: 15px; font-weight: 500; }
+  .card-meta { font-size: 13px; color: var(--text2); margin-top: 2px; }
+  .card-notes { font-size: 13px; color: var(--text2); margin-top: 6px; }
+  .card-followup { font-size: 12px; margin-top: 5px; }
+  .card-actions { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* BADGES */
+  .bdg { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; }
+  .bdg-Cold { background: var(--cold-bg); color: var(--cold-txt); }
+  .bdg-Contacted { background: var(--cont-bg); color: var(--cont-txt); }
+  .bdg-Warm { background: var(--warm-bg); color: var(--warm-txt); }
+  .bdg-Interested { background: var(--int-bg); color: var(--int-txt); }
+  .bdg-Converted { background: var(--conv-bg); color: var(--conv-txt); }
+  .bdg-R { background: var(--r-bg); color: var(--r-txt); }
+  .bdg-M { background: var(--m-bg); color: var(--m-txt); }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 13px; font-size: 13px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); cursor: pointer; transition: background 0.1s; }
+  .btn:hover { background: var(--bg3); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-pri { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn-pri:hover { opacity: 0.85; background: var(--text); }
+  .btn-sm { padding: 3px 9px; font-size: 12px; }
+  .btn-red { color: var(--red); border-color: transparent; }
+  .btn-red:hover { background: #FCEBEB; }
+
+  /* FORMS */
+  .form-wrap { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.25rem; box-shadow: var(--shadow); }
+  .form-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+  .field { margin-bottom: 10px; }
+  .field label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 3px; }
+  .field input, .field select, .field textarea { width: 100%; font-size: 13px; padding: 8px 10px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #888; }
+  .field textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .row-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .err { color: var(--red); font-size: 13px; margin-bottom: 8px; }
+  .ok { color: var(--green); font-size: 13px; margin-bottom: 8px; }
+
+  /* TIME TRACKING */
+  .time-section { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+  .time-title { font-size: 15px; font-weight: 500; margin-bottom: 1rem; }
+  .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .time-card { background: var(--bg2); border-radius: var(--radius); padding: 1rem; }
+  .time-card-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .time-card-hrs { font-size: 28px; font-weight: 500; margin-bottom: 2px; }
+  .time-card-sub { font-size: 12px; color: var(--text2); }
+  .session-list { margin-top: 1rem; }
+  .session-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 0.5px solid var(--border); font-size: 13px; }
+  .session-row:last-child { border-bottom: none; }
+  .session-who { font-weight: 500; }
+  .session-time { color: var(--text2); }
+
+  /* MESSAGE */
+  .msg-output { background: var(--bg2); border-radius: var(--radius); padding: 12px; font-size: 13px; line-height: 1.65; white-space: pre-wrap; margin-top: 10px; border: 0.5px solid var(--border); }
+  .char-count { font-size: 12px; }
+
+  /* INFO BOXES */
+  .info-box { background: #E6F1FB; border: 0.5px solid #B5D4F4; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: #185FA5; margin-bottom: 1rem; line-height: 1.5; }
+  .warn-box { background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: #854F0B; margin-bottom: 1rem; line-height: 1.5; }
+
+  /* SETUP STEPS */
+  .step { display: flex; gap: 12px; margin-bottom: 1rem; }
+  .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .step-content h4 { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+  .step-content p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .step-content code { font-family: monospace; font-size: 11px; background: var(--bg2); padding: 2px 5px; border-radius: 4px; word-break: break-all; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-size: 14px; }
+  .empty svg { display: block; margin: 0 auto 12px; opacity: 0.3; }
+
+  /* RESPONSIVE */
+  @media(max-width: 600px) {
+    .g2, .g3 { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .time-grid { grid-template-columns: 1fr; }
+    .topbar { padding: 0 0.75rem; gap: 8px; }
+    .nav-tabs { gap: 0; }
+    .nav-tab { padding: 6px 8px; font-size: 12px; }
+    .main { padding: 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">KOTH · LinkedIn CRM</div>
+    <div class="auth-sub">Shared pipeline for Reuben &amp; Matt. Backed by Google Sheets.</div>
+
+    <div class="auth-section">
+      <h3>Your name</h3>
+      <div style="display:flex;gap:8px;margin-bottom:0.5rem">
+        <button class="owner-btn" id="pick-r" onclick="pickOwner('Reuben')">Reuben</button>
+        <button class="owner-btn" id="pick-m" onclick="pickOwner('Matt')">Matt</button>
+      </div>
+    </div>
+
+    <div class="auth-section">
+      <h3>Google Sheets API key</h3>
+      <p>Create a free key at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">console.cloud.google.com</a> → Create credentials → API key → restrict to Sheets API. This stays in your browser only.</p>
+      <div class="field" style="margin-bottom:6px"><input type="password" id="api-key-input" placeholder="AIza..."></div>
+    </div>
+
+    <div class="auth-section">
+      <h3>Google Sheet ID</h3>
+      <p>Create a blank Google Sheet, share it with both of you (Editor), then paste the ID from the URL: <code>docs.google.com/spreadsheets/d/<strong>SHEET_ID</strong>/edit</code></p>
+      <div class="field" style="margin-bottom:6px"><input id="sheet-id-input" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></div>
+    </div>
+
+    <div id="auth-msg" style="font-size:13px;margin-bottom:10px"></div>
+    <button class="btn btn-pri" onclick="authConnect()" id="auth-btn" style="width:100%;justify-content:center">Connect &rarr;</button>
+
+    <div style="margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--border)">
+      <p style="font-size:12px;color:var(--text2);line-height:1.6"><strong>First time setup:</strong> Create one Google Sheet, share it with both Reuben and Matt (Editor access). Each person opens this URL, enters their name + the same Sheet ID + their own API key. Data is live — any change either of you makes appears for the other on next refresh.</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <span class="logo">KOTH · CRM</span>
+    <div class="nav-tabs">
+      <button class="nav-tab on" onclick="goTab('pipeline')">Pipeline</button>
+      <button class="nav-tab" onclick="goTab('add')">Add</button>
+      <button class="nav-tab" onclick="goTab('message')">Message</button>
+      <button class="nav-tab" onclick="goTab('time')">Time</button>
+      <button class="nav-tab" onclick="goTab('setup')">Setup</button>
+    </div>
+    <div class="topbar-right">
+      <div class="timer-pill" id="timer-pill" onclick="toggleTimer()">
+        <span class="timer-dot"></span>
+        <span id="timer-display">Start session</span>
+      </div>
+      <div class="owner-btn" id="owner-display"></div>
+      <span class="sync-txt" id="sync-txt"></span>
+      <button class="btn btn-sm" onclick="fullSync()" title="Sync">&#8635;</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- PIPELINE -->
+    <div id="pane-pipeline" class="pane on">
+      <div class="stats-row" id="stats"></div>
+      <div id="dupe-warn"></div>
+      <div class="fbar">
+        <select id="fs" onchange="renderList()">
+          <option value="">All stages</option>
+          <option>Cold</option><option>Contacted</option><option>Warm</option><option>Interested</option><option>Converted</option>
+        </select>
+        <select id="fo" onchange="renderList()">
+          <option value="">All owners</option>
+          <option>Reuben</option><option>Matt</option>
+        </select>
+        <input id="fq" placeholder="Search name or company..." oninput="renderList()">
+      </div>
+      <div id="prospect-list"></div>
+    </div>
+
+    <!-- ADD -->
+    <div id="pane-add" class="pane">
+      <div class="form-wrap">
+        <div class="form-title">Add prospect</div>
+        <div class="g2">
+          <div class="field"><label>Full name *</label><input id="an" placeholder="James Hartley"></div>
+          <div class="field"><label>LinkedIn URL</label><input id="au" placeholder="linkedin.com/in/..."></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Job title</label><input id="at" placeholder="Managing Director"></div>
+          <div class="field"><label>Company</label><input id="ac" placeholder="Hartley Capital"></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>Industry</label>
+            <select id="ai">
+              <option value="">Select...</option>
+              <option>Private equity / VC</option>
+              <option>Law / professional services</option>
+              <option>Financial services</option>
+              <option>Tech / scale-up</option>
+              <option>Media / entertainment</option>
+              <option>Property / real estate</option>
+              <option>Military / ex-forces</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Stage</label>
+            <select id="astg">
+              <option>Cold</option><option>Contacted</option><option>Warm</option><option>Interested</option><option>Converted</option>
+            </select>
+          </div>
+          <div class="field"><label>Follow-up date</label><input type="date" id="afu"></div>
+        </div>
+        <div class="field"><label>Source</label><input id="asc" placeholder="LinkedIn search, mutual connection, comment on post..."></div>
+        <div class="field"><label>Notes</label><textarea id="ano" placeholder="Ski background, interests, anything personal worth referencing..."></textarea></div>
+        <div id="add-msg" style="font-size:13px;margin-bottom:8px"></div>
+        <div class="row-btns">
+          <button class="btn btn-pri" onclick="addProspect()" id="add-btn">+ Add to pipeline</button>
+          <button class="btn" onclick="clearAdd()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGE GENERATOR -->
+    <div id="pane-message" class="pane">
+      <div class="form-wrap">
+        <div class="form-title">AI message generator</div>
+        <div class="g2">
+          <div class="field"><label>Prospect name *</label><input id="gn" placeholder="James Hartley"></div>
+          <div class="field"><label>Job title</label><input id="gti" placeholder="Managing Director"></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Company</label><input id="gco" placeholder="Hartley Capital"></div>
+          <div class="field"><label>Sending as</label>
+            <select id="gsender">
+              <option value="Reuben">Reuben Gray</option>
+              <option value="Matt">Matt Brinkley</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Message type</label>
+          <select id="gtype">
+            <option value="connection">Connection request note (under 300 chars)</option>
+            <option value="followup">First follow-up after connecting</option>
+            <option value="warm">Warm follow-up (they replied positively)</option>
+            <option value="details">Send expedition details + invite to call</option>
+          </select>
+        </div>
+        <div class="field"><label>Anthropic API key (for message generation)</label><input type="password" id="anthro-key" placeholder="sk-ant-..."></div>
+        <div class="field"><label>Personal hook (optional)</label><input id="ghook" placeholder="Ex-military, skis every year, based in Edinburgh..."></div>
+        <button class="btn btn-pri" onclick="genMsg()" id="gen-btn">✦ Generate</button>
+      </div>
+      <div id="gen-output"></div>
+    </div>
+
+    <!-- TIME TRACKING -->
+    <div id="pane-time" class="pane">
+      <div class="time-section">
+        <div class="time-title">Outreach time tracker</div>
+        <div class="time-grid" id="time-totals"></div>
+        <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+          <select id="time-range" onchange="renderTime()">
+            <option value="7">Last 7 days</option>
+            <option value="30" selected>Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="all">All time</option>
+          </select>
+          <button class="btn btn-sm" onclick="renderTime()">&#8635; Refresh</button>
+        </div>
+        <div class="session-list" id="session-list"></div>
+      </div>
+    </div>
+
+    <!-- SETUP -->
+    <div id="pane-setup" class="pane">
+      <div class="form-wrap">
+        <div class="form-title">How to host this as a shared URL</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Download the HTML file</h4>
+            <p>Save <code>index.html</code> to your computer (or download it from Claude). This is your entire app — one file.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Create a free GitHub account &amp; repo</h4>
+            <p>Go to <a href="https://github.com" target="_blank">github.com</a> → New repository → name it <code>koth-crm</code> → Public → Create. Then upload <code>index.html</code>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Enable GitHub Pages</h4>
+            <p>In the repo → Settings → Pages → Source: Deploy from branch → Branch: main → Save. Your URL will be: <code>https://yourusername.github.io/koth-crm</code></p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Create a Google Sheet &amp; API key</h4>
+            <p>Create a blank Google Sheet. Share it with both of you (Editor). Get a free Sheets API key from <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> → enable the Sheets API → create an API key. Each person enters their own API key when they open the app.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h4>Send Matt the URL</h4>
+            <p>Share the GitHub Pages URL with Matt. He opens it, picks his name, enters the same Sheet ID, and his own API key. You're both live on the same pipeline.</p>
+          </div>
+        </div>
+      </div>
+      <div class="form-wrap">
+        <div class="form-title">Current connection</div>
+        <div class="field"><label>Sheet ID</label><input id="cfg-sheet" placeholder="Not connected" readonly></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="open-sheet-btn" onclick="openSheet()">&#8599; Open sheet</button>
+          <button class="btn btn-red" onclick="disconnect()">Disconnect</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let ME = '';
+let SHEET_ID = '';
+let API_KEY = '';
+let prospects = [];
+let sessions = [];
+let timerStart = null;
+let timerInterval = null;
+const STAGES = ['Cold','Contacted','Warm','Interested','Converted'];
+const SCOPES_P = 'Prospects';
+const SCOPES_T = 'Sessions';
+const HEADERS_P = ['ID','Name','LinkedIn URL','Title','Company','Industry','Stage','Owner','Source','Notes','Follow-up Date','Date Added','Last Updated'];
+const HEADERS_T = ['ID','Owner','Start','End','Duration (mins)','Date'];
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function pickOwner(o) {
+  ME = o;
+  document.getElementById('pick-r').className = 'owner-btn' + (o==='Reuben'?' r':'');
+  document.getElementById('pick-m').className = 'owner-btn' + (o==='Matt'?' m':'');
+}
+
+async function authConnect() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const sid = document.getElementById('sheet-id-input').value.trim();
+  const msg = document.getElementById('auth-msg');
+  if (!ME) { msg.className='err'; msg.textContent='Please pick your name.'; return; }
+  if (!key) { msg.className='err'; msg.textContent='Enter your Google Sheets API key.'; return; }
+  if (!sid) { msg.className='err'; msg.textContent='Enter the Sheet ID.'; return; }
+  const btn = document.getElementById('auth-btn');
+  btn.disabled = true; btn.textContent = 'Connecting...';
+  try {
+    const r = await gGet(sid, key, `${SCOPES_P}!A1:A1`);
+    API_KEY = key; SHEET_ID = sid;
+    localStorage.setItem('koth_key', key);
+    localStorage.setItem('koth_sheet', sid);
+    localStorage.setItem('koth_me', ME);
+    await ensureHeaders();
+    await fullSync();
+    showApp();
+  } catch(e) {
+    msg.className = 'err';
+    msg.textContent = 'Connection failed: ' + e.message + '. Check your API key and Sheet ID.';
+  }
+  btn.disabled = false; btn.textContent = 'Connect →';
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const od = document.getElementById('owner-display');
+  od.textContent = ME;
+  od.className = 'owner-btn ' + (ME==='Reuben'?'r':'m');
+  document.getElementById('cfg-sheet').value = SHEET_ID;
+  document.getElementById('gsender').value = ME;
+  if (localStorage.getItem('koth_anthro')) {
+    document.getElementById('anthro-key').value = localStorage.getItem('koth_anthro');
+  }
+}
+
+// ─── GOOGLE SHEETS API ────────────────────────────────────────────────────────
+async function gGet(sid, key, range) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sid}/values/${encodeURIComponent(range)}?key=${key}`;
+  const r = await fetch(url);
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+
+async function gAppend(range, values) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS&key=${API_KEY}`;
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values }) });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+
+async function gUpdate(range, values) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${API_KEY}`;
+  const r = await fetch(url, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ values }) });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+
+async function gBatchUpdate(requests) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate?key=${API_KEY}`;
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ requests }) });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error?.message || r.status); }
+  return r.json();
+}
+
+async function ensureHeaders() {
+  try {
+    const rp = await gGet(SHEET_ID, API_KEY, `${SCOPES_P}!A1:A1`);
+    if (!rp.values) await gUpdate(`${SCOPES_P}!A1`, [HEADERS_P]);
+  } catch(e) {
+    // sheet tab might not exist — try to create by writing headers
+    try { await gUpdate(`${SCOPES_P}!A1`, [HEADERS_P]); } catch(_) {}
+  }
+  try {
+    const rt = await gGet(SHEET_ID, API_KEY, `${SCOPES_T}!A1:A1`);
+    if (!rt.values) await gUpdate(`${SCOPES_T}!A1`, [HEADERS_T]);
+  } catch(e) {
+    try { await gUpdate(`${SCOPES_T}!A1`, [HEADERS_T]); } catch(_) {}
+  }
+}
+
+// ─── SYNC ─────────────────────────────────────────────────────────────────────
+async function fullSync() {
+  setSS('Syncing...');
+  try {
+    const rp = await gGet(SHEET_ID, API_KEY, `${SCOPES_P}!A2:M`);
+    const rows = rp.values || [];
+    prospects = rows.filter(r=>r[0]).map(r => ({
+      id:r[0]||'', name:r[1]||'', url:r[2]||'', title:r[3]||'', company:r[4]||'',
+      industry:r[5]||'', stage:r[6]||'Cold', owner:r[7]||'', source:r[8]||'',
+      notes:r[9]||'', followup:r[10]||'', added:r[11]||'', updated:r[12]||''
+    }));
+    const rs = await gGet(SHEET_ID, API_KEY, `${SCOPES_T}!A2:F`);
+    const srows = rs.values || [];
+    sessions = srows.filter(r=>r[0]).map(r => ({
+      id:r[0]||'', owner:r[1]||'', start:r[2]||'', end:r[3]||'',
+      mins:parseFloat(r[4])||0, date:r[5]||''
+    }));
+    setSS('Synced ' + new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
+    renderList(); checkDupes(); renderTime();
+  } catch(e) { setSS('Sync error: ' + e.message); }
+}
+
+function setSS(msg) { document.getElementById('sync-txt').textContent = msg; }
+
+// ─── TIMER ────────────────────────────────────────────────────────────────────
+function toggleTimer() {
+  if (timerStart) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+}
+
+function startTimer() {
+  timerStart = Date.now();
+  const pill = document.getElementById('timer-pill');
+  pill.className = 'timer-pill running';
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+    const h = Math.floor(elapsed/3600), m = Math.floor((elapsed%3600)/60), s = elapsed%60;
+    document.getElementById('timer-display').textContent =
+      (h>0?h+'h ':'') + m+'m ' + String(s).padStart(2,'0')+'s';
+  }, 1000);
+}
+
+async function stopTimer() {
+  if (!timerStart) return;
+  const endTime = Date.now();
+  const mins = Math.round((endTime - timerStart) / 60000 * 10) / 10;
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerStart = null;
+  document.getElementById('timer-pill').className = 'timer-pill';
+  document.getElementById('timer-display').textContent = 'Start session';
+  if (mins < 0.5) { setSS('Session too short to log'); return; }
+  const now = new Date();
+  const sid = 's' + Date.now();
+  const row = [
+    sid, ME,
+    new Date(endTime - mins*60000).toISOString(),
+    now.toISOString(),
+    mins.toFixed(1),
+    now.toISOString().slice(0,10)
+  ];
+  try {
+    await gAppend(`${SCOPES_T}!A:F`, [row]);
+    sessions.push({ id:sid, owner:ME, mins, date:now.toISOString().slice(0,10) });
+    setSS(`Session logged: ${mins.toFixed(1)} mins`);
+    renderTime();
+  } catch(e) { setSS('Could not log session: '+e.message); }
+}
+
+// ─── PIPELINE ─────────────────────────────────────────────────────────────────
+function checkDupes() {
+  const seen = {}; const dupes = new Set();
+  prospects.forEach(p => {
+    const k = (p.name||'').toLowerCase().trim();
+    if (k && seen[k] && seen[k] !== p.owner) dupes.add(p.name);
+    if (k) seen[k] = p.owner;
+  });
+  const z = document.getElementById('dupe-warn');
+  z.innerHTML = dupes.size
+    ? `<div class="warn-box">⚠ Possible duplicate: <strong>${[...dupes].join(', ')}</strong> — both you and Matt may have this person.</div>` : '';
+}
+
+function renderList() {
+  const sf = document.getElementById('fs').value;
+  const of = document.getElementById('fo').value;
+  const q = (document.getElementById('fq').value||'').toLowerCase();
+  const list = prospects.filter(p => {
+    if (sf && p.stage !== sf) return false;
+    if (of && p.owner !== of) return false;
+    if (q && !((p.name||'').toLowerCase().includes(q)||(p.company||'').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const counts = STAGES.map(s => prospects.filter(p=>p.stage===s).length);
+  document.getElementById('stats').innerHTML = STAGES.map((s,i) =>
+    `<div class="stat"><div class="stat-n">${counts[i]}</div><div class="stat-l">${s}</div></div>`
+  ).join('');
+  const el = document.getElementById('prospect-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>No prospects match this filter.</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const in3 = new Date(Date.now()+3*864e5).toISOString().slice(0,10);
+  el.innerHTML = list.map(p => {
+    const od = p.followup && p.followup < today;
+    const soon = p.followup && p.followup >= today && p.followup <= in3;
+    return `<div class="card ${od?'od':soon?'soon':''}">
+      <div class="card-top">
+        <div>
+          <span class="card-name">${esc(p.name)}</span>
+          <span class="bdg bdg-${p.owner==='Reuben'?'R':'M'}" style="margin-left:6px">${esc(p.owner||'?')}</span>
+          <div class="card-meta">${[p.title,p.company].filter(Boolean).map(esc).join(' · ')||'—'}</div>
+        </div>
+        <span class="bdg bdg-${p.stage}">${p.stage}</span>
+      </div>
+      ${p.notes?`<div class="card-notes">${esc(p.notes)}</div>`:''}
+      ${p.source?`<div style="font-size:12px;color:var(--text3);margin-top:4px">via ${esc(p.source)}</div>`:''}
+      ${p.followup?`<div class="card-followup" style="color:${od?'var(--red)':soon?'var(--amber)':'var(--text2)'}">&#x1F4C5; Follow up: ${p.followup}${od?' — overdue':soon?' — this week':''}</div>`:''}
+      <div class="card-actions">
+        ${STAGES.filter(s=>s!==p.stage).map(s=>`<button class="btn btn-sm" onclick="setStage('${p.id}','${s}')">${s}</button>`).join('')}
+        ${p.url?`<a href="${p.url.startsWith('http')?p.url:'https://'+p.url}" target="_blank" class="btn btn-sm">LinkedIn &#8599;</a>`:''}
+        <button class="btn btn-sm" onclick="prefillMsg('${p.id}')">&#10022; Message</button>
+        <button class="btn btn-sm btn-red" onclick="delProspect('${p.id}')">&#x2715;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setStage(id, stage) {
+  const idx = prospects.findIndex(p=>p.id===id);
+  if (idx < 0) return;
+  prospects[idx].stage = stage;
+  prospects[idx].updated = new Date().toISOString().slice(0,10);
+  renderList();
+  try {
+    const row = prospects[idx];
+    await gUpdate(`${SCOPES_P}!G${idx+2}:M${idx+2}`, [[stage,row.owner,row.source,row.notes,row.followup,row.added,row.updated]]);
+    setSS('Stage updated');
+  } catch(e) { setSS('Update failed: '+e.message); await fullSync(); }
+}
+
+async function delProspect(id) {
+  if (!confirm('Remove this prospect?')) return;
+  const idx = prospects.findIndex(p=>p.id===id);
+  if (idx < 0) return;
+  prospects.splice(idx, 1);
+  renderList();
+  try {
+    const meta = await gGet(SHEET_ID, API_KEY, `${SCOPES_P}!A1:A1`);
+    const smeta = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?key=${API_KEY}`);
+    const sdata = await smeta.json();
+    const sheet = sdata.sheets?.find(s=>s.properties?.title===SCOPES_P);
+    if (sheet) {
+      await gBatchUpdate([{deleteDimension:{range:{sheetId:sheet.properties.sheetId,dimension:'ROWS',startIndex:idx+1,endIndex:idx+2}}}]);
+    }
+    setSS('Removed');
+  } catch(e) { setSS('Delete error — resyncing'); await fullSync(); }
+}
+
+async function addProspect() {
+  const name = document.getElementById('an').value.trim();
+  const msg = document.getElementById('add-msg');
+  if (!name) { msg.className='err'; msg.textContent='Name is required'; return; }
+  const existing = prospects.find(p=>(p.name||'').toLowerCase()===name.toLowerCase());
+  if (existing) { msg.className='warn-box'; msg.textContent=`"${name}" is already in the pipeline (${existing.owner}). Check before adding.`; return; }
+  document.getElementById('add-btn').disabled = true;
+  const now = new Date().toISOString().slice(0,10);
+  const row = ['p'+Date.now(), name,
+    document.getElementById('au').value.trim(),
+    document.getElementById('at').value.trim(),
+    document.getElementById('ac').value.trim(),
+    document.getElementById('ai').value,
+    document.getElementById('astg').value,
+    ME,
+    document.getElementById('asc').value.trim(),
+    document.getElementById('ano').value.trim(),
+    document.getElementById('afu').value,
+    now, now
+  ];
+  try {
+    await gAppend(`${SCOPES_P}!A:M`, [row]);
+    msg.className='ok'; msg.textContent=name+' added to pipeline';
+    clearAdd(); await fullSync(); goTab('pipeline');
+  } catch(e) { msg.className='err'; msg.textContent='Error: '+e.message; }
+  document.getElementById('add-btn').disabled = false;
+}
+
+function clearAdd() {
+  ['an','au','at','ac','asc','ano','afu'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ai').value='';
+  document.getElementById('astg').value='Cold';
+  document.getElementById('add-msg').textContent='';
+}
+
+// ─── MESSAGE GENERATOR ────────────────────────────────────────────────────────
+function prefillMsg(id) {
+  const p = prospects.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('gn').value = p.name||'';
+  document.getElementById('gti').value = p.title||'';
+  document.getElementById('gco').value = p.company||'';
+  document.getElementById('ghook').value = p.notes||'';
+  document.getElementById('gsender').value = p.owner||ME;
+  goTab('message');
+}
+
+async function genMsg() {
+  const name = document.getElementById('gn').value.trim();
+  if (!name) { alert('Enter a prospect name'); return; }
+  const anthro = document.getElementById('anthro-key').value.trim();
+  if (!anthro) { document.getElementById('gen-output').innerHTML='<div class="warn-box">Enter your Anthropic API key above to generate messages.</div>'; return; }
+  localStorage.setItem('koth_anthro', anthro);
+  const title = document.getElementById('gti').value.trim();
+  const company = document.getElementById('gco').value.trim();
+  const type = document.getElementById('gtype').value;
+  const sender = document.getElementById('gsender').value;
+  const hook = document.getElementById('ghook').value.trim();
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  document.getElementById('gen-output').innerHTML = '<div style="padding:12px;color:var(--text2);font-size:13px">Writing message...</div>';
+  const typeMap = {
+    connection: 'a LinkedIn connection request note strictly under 300 characters total',
+    followup: 'a first follow-up LinkedIn message (2-3 short paragraphs, no hard sell, conversational)',
+    warm: 'a warm follow-up for someone who replied positively — friendly, move toward sharing expedition details',
+    details: 'a message sharing key expedition details and inviting them to a short call'
+  };
+  const bios = {
+    Reuben: 'Reuben Gray — ex-professional skier, TNT Sports broadcaster who covered the 2026 Winter Olympics, co-founder of KOTH, walked 801 miles London to Alps in ski boots in 2025',
+    Matt: 'Matt Brinkley — British Army Reservist, entrepreneur, endurance adventurer, co-founder of KOTH, walked 801 miles London to Alps in ski boots in 2025'
+  };
+  const prompt = `Write ${typeMap[type]} on behalf of ${sender} (${bios[sender]}) for King of the Hill (KOTH).
+
+KOTH: 13-day luxury ski expedition in Nepal's Annapurna II region. Guided by Krish Thapa Magar — former Head of SAS Mountain Troop, first Gurkha through SAS selection, nine world firsts in the Himalayas. Luxury base camp at 4,000m, ski touring to 5,500m. 30 places. £10,000 per person.
+
+Prospect: ${name}, ${title||'unknown title'}, ${company||'unknown company'}.
+Hook/notes: ${hook||'none provided'}.
+
+Rules: never open with clichés. Don't pitch in the connection note — intrigue only. Direct, human, confident voice of a real founder, not a marketing agency. Connection note must be under 300 chars total. Output the message text only — no preamble, no markdown.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': anthro, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:500, messages:[{role:'user',content:prompt}] })
+    });
+    const d = await res.json();
+    const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim() || 'No response.';
+    const chars = text.length;
+    document.getElementById('gen-output').innerHTML = `<div class="form-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:500">From ${sender}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${type==='connection'?`<span class="char-count" style="color:${chars>300?'var(--red)':'var(--green)'}">` +chars+`/300 chars</span>`:''}
+          <button class="btn btn-sm" onclick="copyMsg(this)">Copy</button>
+        </div>
+      </div>
+      <div class="msg-output" id="msg-text">${esc(text)}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-sm btn-pri" onclick="sendPrompt('Rewrite this LinkedIn message with a completely different hook')">Different hook ↗</button>
+        <button class="btn btn-sm" onclick="sendPrompt('Make this shorter and punchier')">Shorter ↗</button>
+        <button class="btn btn-sm" onclick="sendPrompt('Make this feel more personal and less formal')">More personal ↗</button>
+      </div>
+    </div>`;
+  } catch(e) {
+    document.getElementById('gen-output').innerHTML = `<div class="err" style="padding:12px">Error: ${e.message}</div>`;
+  }
+  btn.disabled = false;
+}
+
+function copyMsg(btn) {
+  navigator.clipboard.writeText(document.getElementById('msg-text').innerText).then(() => {
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+// ─── TIME TRACKING VIEW ───────────────────────────────────────────────────────
+function renderTime() {
+  const range = document.getElementById('time-range').value;
+  const cutoff = range === 'all' ? null : new Date(Date.now() - parseInt(range)*864e5).toISOString().slice(0,10);
+  const filtered = cutoff ? sessions.filter(s=>s.date>=cutoff) : sessions;
+  const rMins = filtered.filter(s=>s.owner==='Reuben').reduce((a,s)=>a+s.mins,0);
+  const mMins = filtered.filter(s=>s.owner==='Matt').reduce((a,s)=>a+s.mins,0);
+  const fmt = mins => {
+    const h = Math.floor(mins/60), m = Math.round(mins%60);
+    return h>0 ? `${h}h ${m}m` : `${m}m`;
+  };
+  document.getElementById('time-totals').innerHTML = `
+    <div class="time-card">
+      <div class="time-card-name" style="color:var(--r-txt)">Reuben</div>
+      <div class="time-card-hrs">${fmt(rMins)}</div>
+      <div class="time-card-sub">${filtered.filter(s=>s.owner==='Reuben').length} sessions</div>
+    </div>
+    <div class="time-card">
+      <div class="time-card-name" style="color:var(--m-txt)">Matt</div>
+      <div class="time-card-hrs">${fmt(mMins)}</div>
+      <div class="time-card-sub">${filtered.filter(s=>s.owner==='Matt').length} sessions</div>
+    </div>`;
+  const recent = [...filtered].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20);
+  document.getElementById('session-list').innerHTML = recent.length
+    ? recent.map(s=>`<div class="session-row">
+        <span class="session-who" style="color:${s.owner==='Reuben'?'var(--r-txt)':'var(--m-txt)'}">${s.owner}</span>
+        <span class="session-time">${s.date} &nbsp;·&nbsp; ${parseFloat(s.mins).toFixed(1)} mins</span>
+      </div>`).join('')
+    : '<div style="font-size:13px;color:var(--text3);padding:1rem 0">No sessions logged yet. Hit "Start session" before you start doing outreach.</div>';
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function goTab(t) {
+  const tabs = ['pipeline','add','message','time','setup'];
+  document.querySelectorAll('.nav-tab').forEach((el,i)=>el.classList.toggle('on',tabs[i]===t));
+  document.querySelectorAll('.pane').forEach(el=>el.classList.remove('on'));
+  document.getElementById('pane-'+t).classList.add('on');
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function openSheet() {
+  window.open(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`, '_blank');
+}
+
+function disconnect() {
+  if (!confirm('Disconnect from Google Sheets? Your data remains in the sheet.')) return;
+  localStorage.removeItem('koth_key');
+  localStorage.removeItem('koth_sheet');
+  localStorage.removeItem('koth_me');
+  location.reload();
+}
+
+function sendPrompt(text) {
+  // Claude artifact integration
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage({ type: 'sendPrompt', text }, '*');
+  }
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+(function boot() {
+  const k = localStorage.getItem('koth_key');
+  const s = localStorage.getItem('koth_sheet');
+  const m = localStorage.getItem('koth_me');
+  if (k && s && m) {
+    API_KEY = k; SHEET_ID = s; ME = m;
+    document.getElementById('api-key-input').value = k;
+    document.getElementById('sheet-id-input').value = s;
+    pickOwner(m);
+    showApp();
+    fullSync();
+  }
+  // auto-sync every 45s
+  setInterval(() => { if (SHEET_ID) fullSync(); }, 45000);
+})();
+</script>
+</body>
+</html>
