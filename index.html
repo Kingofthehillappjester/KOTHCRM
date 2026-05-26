@@ -1412,9 +1412,7 @@ async function saveEdit(id) {
   if(newLog) {
     const ts = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
     const logEntry = `[${ts}] ${newLog}`;
-    p.notes = p.notes ? p.notes + '
-
-' + logEntry : logEntry;
+    p.notes = p.notes ? p.notes + '\n\n' + logEntry : logEntry;
   }
 
   p.updated = new Date().toISOString().slice(0,10);
