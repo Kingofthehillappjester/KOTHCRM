@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOTH Operating System</title>
+<style>
+:root{
+  --bg:#0D0D0D;--bg2:#111111;--bg3:#181818;--bg4:#222222;
+  --border:rgba(184,150,46,0.12);--border2:rgba(184,150,46,0.28);--borderg:rgba(184,150,46,0.55);
+  --text:#F0EDE6;--text2:#928C80;--text3:#5A5650;
+  --gold:#B8962E;--goldl:#D4AE4E;--goldbg:rgba(184,150,46,0.08);--goldbg2:rgba(184,150,46,0.16);
+  --green:#2A9D6E;--red:#D94F4F;--amber:#C9940A;--blue:#4A8FD4;--purple:#8B7FD4;
+  --cyan:#4ABFB3;
+  --reuben:#8B7FD4;--reuben-bg:rgba(139,127,212,0.10);
+  --matt:#D4894A;--matt-bg:rgba(212,137,74,0.10);
+  --intern:#4ABFB3;--intern-bg:rgba(74,191,179,0.10);
+  --crit:#D94F4F;--crit-bg:rgba(217,79,79,0.10);
+  --high:#C9940A;--high-bg:rgba(201,148,10,0.10);
+  --med:#B8962E;--med-bg:rgba(184,150,46,0.10);
+  --low:#5A5650;--low-bg:rgba(90,86,80,0.10);
+  --radius:6px;--radius-lg:10px;--shadow:0 2px 16px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem}
+.auth-card{background:var(--bg2);border-radius:var(--radius-lg);border:.5px solid var(--borderg);padding:2rem;max-width:560px;width:100%}
+.auth-logo{font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-family:Georgia,serif;margin-bottom:.5rem}
+.auth-sub{font-size:12px;color:var(--text2);margin-bottom:1.5rem}
+.user-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:1rem}
+.user-btn{padding:12px;border:1px solid var(--borderg);border-radius:var(--radius);background:var(--bg3);color:var(--text);cursor:pointer;text-align:center;font-size:12px;font-weight:600;transition:all .2s;text-transform:uppercase;letter-spacing:.08em}
+.user-btn:hover{border-color:var(--gold);color:var(--gold)}
+.user-btn.sel{background:var(--goldbg2);border-color:var(--gold);color:var(--gold)}
+.form-wrap{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;border-top:.5px solid var(--borderg)}
+.form-title{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;font-family:Georgia,serif}
+.f{margin-bottom:10px}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+input,select,textarea{width:100%;font-size:13px;padding:8px 10px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;font-size:12px;letter-spacing:.04em;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg3);color:var(--text);cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--bg4);border-color:var(--gold);color:var(--gold)}
+.btn-pri{background:var(--gold);color:#0D0D0D;border-color:var(--gold);font-weight:600}
+.btn-pri:hover{background:var(--goldl);border-color:var(--goldl)}
+.hint-block{background:var(--bg3);border:.5px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;font-size:11.5px;color:var(--text2);line-height:1.7;margin-bottom:1rem}
+
+#app{display:none;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:.5px solid var(--borderg);padding:0 1.25rem;display:flex;align-items:center;gap:5px;height:52px;position:sticky;top:0;z-index:100}
+.logo{font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-right:4px;font-family:Georgia,serif}
+.nav-tab{padding:6px 9px;border-radius:var(--radius);border:none;background:none;color:var(--text2);font-size:12px;cursor:pointer;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;transition:all .12s}
+.nav-tab:hover{background:var(--bg3);color:var(--gold)}
+.nav-tab.on{background:var(--goldbg2);color:var(--gold);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.owner-pill{padding:4px 10px;border-radius:3px;border:.5px solid var(--borderg);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.owner-r{background:var(--reuben-bg);color:var(--reuben);border-color:var(--reuben)}
+.owner-m{background:var(--matt-bg);color:var(--matt);border-color:var(--matt)}
+.owner-i{background:var(--intern-bg);color:var(--intern);border-color:var(--intern)}
+.notif-bell{cursor:pointer;font-size:16px}
+.notif-count{position:absolute;top:-6px;right:-8px;background:var(--red);color:#fff;width:16px;height:16px;border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+.main{max-width:1200px;margin:0 auto;padding:1.25rem}
+.pane{display:none}
+.pane.on{display:block}
+
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+textarea{resize:vertical;min-height:64px;line-height:1.5}
+
+.bdg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.bdg-reuben{background:var(--reuben-bg);color:var(--reuben)}
+.bdg-matt{background:var(--matt-bg);color:var(--matt)}
+.bdg-intern{background:var(--intern-bg);color:var(--intern)}
+.bdg-critical{background:var(--crit-bg);color:var(--crit)}
+.bdg-high{background:var(--high-bg);color:var(--high)}
+.bdg-medium{background:var(--med-bg);color:var(--med)}
+.bdg-low{background:var(--low-bg);color:var(--low)}
+
+.proj-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem;margin-bottom:10px;box-shadow:var(--shadow)}
+.proj-card.reuben{border-left:3px solid var(--reuben)}
+.proj-card.matt{border-left:3px solid var(--matt)}
+.proj-card.intern{border-left:3px solid var(--intern)}
+.proj-card.due{background:rgba(201,148,10,0.05)}
+.proj-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.proj-title{font-size:15px;font-weight:600}
+.proj-badges{display:flex;gap:5px;flex-wrap:wrap}
+.proj-meta{font-size:12px;color:var(--text2);margin:6px 0}
+.proj-progress{width:100%;height:4px;background:var(--bg3);border-radius:2px;margin:8px 0;overflow:hidden}
+.proj-prog-bar{height:100%;background:var(--gold);transition:width .3s}
+.proj-btns{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.btn-sm{padding:3px 9px;font-size:11px}
+
+.filter-btn{padding:6px 12px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;transition:all .15s}
+.filter-btn:hover{border-color:var(--gold);color:var(--gold)}
+.filter-btn.active{background:var(--goldbg2);border-color:var(--gold);color:var(--gold);font-weight:700}
+.table-filter{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+
+.card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;margin-bottom:9px;box-shadow:var(--shadow)}
+.card.od{border-left:2px solid var(--red)}
+.card.soon{border-left:2px solid var(--amber)}
+.card-name{font-size:15px;font-weight:500}
+.card-meta{font-size:12.5px;color:var(--text2);margin-top:2px}
+.empty{text-align:center;padding:3rem;color:var(--text3)}
+
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);padding:1px;border-radius:var(--radius)}
+.cal-header{background:var(--bg3);padding:8px;text-align:center;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+.cal-day{background:var(--bg2);padding:8px;min-height:80px;position:relative;border-radius:2px;font-size:11px}
+.cal-day-num{font-weight:600;color:var(--text);margin-bottom:4px}
+.cal-day.other-month .cal-day-num{color:var(--text3)}
+.cal-day.today{background:var(--goldbg);border:.5px solid var(--gold)}
+.cal-event{font-size:10px;background:var(--gold);color:#0D0D0D;padding:2px 4px;border-radius:2px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.cal-event.reuben{background:var(--reuben)}
+.cal-event.matt{background:var(--matt)}
+.cal-event.intern{background:var(--intern)}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding:0 1rem}
+.cal-nav button{padding:5px 10px;border:1px solid var(--borderg);background:var(--bg3);color:var(--text);border-radius:var(--radius);cursor:pointer;font-size:12px}
+.cal-nav button:hover{border-color:var(--gold);color:var(--gold)}
+.cal-month{font-size:16px;font-weight:600;letter-spacing:.08em}
+
+.table-wrap{overflow-x:auto;margin-bottom:1.25rem}
+.table{width:100%;border-collapse:collapse;font-size:13px}
+.table th{background:var(--bg3);padding:10px;text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);border:.5px solid var(--border)}
+.table td{padding:10px;border:.5px solid var(--border);background:var(--bg2)}
+.table tr:hover td{background:var(--bg3)}
+
+.notif-panel{position:fixed;right:0;top:52px;width:380px;height:calc(100vh - 52px);background:var(--bg2);border-left:.5px solid var(--borderg);overflow-y:auto;display:none;z-index:99;flex-direction:column}
+.notif-panel.show{display:flex}
+.notif-header{padding:1rem 1.25rem;border-bottom:.5px solid var(--border);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0}
+.notif-list{flex:1;overflow-y:auto}
+.notif-item{padding:1rem 1.25rem;border-bottom:.5px solid var(--border);font-size:12px;line-height:1.5;cursor:pointer}
+.notif-item-time{font-size:11px;color:var(--text3);margin-top:4px}
+.notif-empty{padding:2rem 1.25rem;text-align:center;color:var(--text3);font-size:12px}
+
+@media(max-width:768px){
+  .g2,.g3{grid-template-columns:1fr}
+  .cal-grid{grid-template-columns:repeat(7,1fr);gap:1px}
+  .cal-day{min-height:60px;font-size:10px;padding:4px}
+  .notif-panel{width:100%;max-width:100%}
+}
+</style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">KOTH OS</div>
+    <div class="auth-sub">King of the Hill Operating System</div>
+    
+    <div class="hint-block">
+      <strong>Step 1:</strong> Select your user
+    </div>
+    
+    <div class="user-grid">
+      <button class="user-btn" onclick="selectUser('REUBEN')">Reuben</button>
+      <button class="user-btn" onclick="selectUser('MATT')">Matt</button>
+      <button class="user-btn" onclick="selectUser('INTERN')">Intern</button>
+    </div>
+    
+    <div class="form-wrap">
+      <div class="form-title">CRM Backend URLs (Optional)</div>
+      <div class="hint-block" style="margin-bottom:1rem;font-size:11px">
+        <strong>First time?</strong> Leave blank and go to Setup after login.
+      </div>
+      <div class="f">
+        <label>LinkedIn</label>
+        <input id="li-url" type="text" placeholder="https://script.google.com/...">
+      </div>
+      <div class="f">
+        <label>Travel Partners</label>
+        <input id="tp-url" type="text" placeholder="https://script.google.com/...">
+      </div>
+      <div class="f">
+        <label>PR/Press</label>
+        <input id="pr-url" type="text" placeholder="https://script.google.com/...">
+      </div>
+      <div class="f">
+        <label>Website Leads</label>
+        <input id="wb-url" type="text" placeholder="https://script.google.com/...">
+      </div>
+      <div class="f">
+        <label>Projects Backend</label>
+        <input id="proj-url" type="text" placeholder="https://script.google.com/...">
+      </div>
+      <button class="btn btn-pri" onclick="handleLogin()" style="width:100%">Enter KOTH OS</button>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="logo">KOTH OS</div>
+    <button class="nav-tab on" onclick="goTab('today')">Today</button>
+    <button class="nav-tab" onclick="goTab('projects')">Projects</button>
+    <button class="nav-tab" onclick="goTab('pipeline')">Pipeline</button>
+    <button class="nav-tab" onclick="goTab('add')">Add</button>
+    <button class="nav-tab" onclick="goTab('health')">Health</button>
+    <button class="nav-tab" onclick="goTab('setup')">Setup</button>
+    
+    <div class="topbar-right">
+      <div class="owner-pill" id="user-pill">REUBEN</div>
+      <div class="notif-bell" onclick="toggleNotifs()">🔔<div class="notif-count" id="notif-count" style="display:none">0</div></div>
+      <button class="btn btn-sm" onclick="logout()" style="background:rgba(217,79,79,0.1);color:var(--red);border-color:var(--red)">Logout</button>
+    </div>
+  </div>
+  
+  <div class="notif-panel" id="notif-panel">
+    <div class="notif-header">Notifications</div>
+    <div class="notif-list" id="notif-list">
+      <div class="notif-empty">No notifications</div>
+    </div>
+  </div>
+  
+  <div class="main">
+    
+    <div id="pane-today" class="pane on">
+      <h2 style="font-size:16px;margin-bottom:1.5rem">Today's Overview</h2>
+      <h3 style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:1rem;color:var(--text2)">Due Projects</h3>
+      <div id="today-projects" style="min-height:100px"></div>
+    </div>
+    
+    <div id="pane-projects" class="pane">
+      <div style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center">
+        <h2 style="font-size:16px">Projects</h2>
+        <button class="btn btn-pri" onclick="toggleNewProject()">+ New Project</button>
+      </div>
+      
+      <div id="new-project-form" class="form-wrap" style="display:none">
+        <div class="form-title">Create New Project</div>
+        <div class="g2">
+          <div class="f">
+            <label>Title</label>
+            <input id="proj-title" type="text">
+          </div>
+          <div class="f">
+            <label>Assigned To</label>
+            <select id="proj-assign">
+              <option value="REUBEN">Reuben</option>
+              <option value="MATT">Matt</option>
+              <option value="INTERN">Intern</option>
+            </select>
+          </div>
+        </div>
+        <div class="g3">
+          <div class="f">
+            <label>Start Date</label>
+            <input id="proj-start" type="date">
+          </div>
+          <div class="f">
+            <label>End Date</label>
+            <input id="proj-end" type="date">
+          </div>
+          <div class="f">
+            <label>Priority</label>
+            <select id="proj-priority">
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="f">
+            <label>Category</label>
+            <select id="proj-category">
+              <option value="engineering">⚙️ Engineering</option>
+              <option value="marketing">📢 Marketing</option>
+              <option value="sales">💼 Sales</option>
+              <option value="legal">⚖️ Legal</option>
+              <option value="partnerships">🤝 Partnerships</option>
+              <option value="misc">📌 Misc</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Status</label>
+            <select id="proj-status">
+              <option value="open" selected>Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+        <div class="f">
+          <label>Description</label>
+          <textarea id="proj-desc" placeholder="What needs to be done?"></textarea>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-pri" onclick="createProject()">Create Project</button>
+          <button class="btn" onclick="toggleNewProject()">Cancel</button>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:1rem;display:flex;gap:8px">
+        <button class="filter-btn active" onclick="setProjectView('list')">List View</button>
+        <button class="filter-btn" onclick="setProjectView('table')">Table View</button>
+        <button class="filter-btn" onclick="setProjectView('calendar')">Calendar View</button>
+      </div>
+      
+      <div class="table-filter">
+        <button class="filter-btn active" onclick="filterProjects('all')">All</button>
+        <button class="filter-btn" onclick="filterProjects('engineering')">⚙️ Engineering</button>
+        <button class="filter-btn" onclick="filterProjects('marketing')">📢 Marketing</button>
+        <button class="filter-btn" onclick="filterProjects('sales')">💼 Sales</button>
+        <button class="filter-btn" onclick="filterProjects('legal')">⚖️ Legal</button>
+        <button class="filter-btn" onclick="filterProjects('partnerships')">🤝 Partnerships</button>
+        <button class="filter-btn" onclick="filterProjects('misc')">📌 Misc</button>
+      </div>
+      
+      <div id="proj-list-view">
+        <div id="projects-list" style="min-height:200px"></div>
+      </div>
+      
+      <div id="proj-table-view" style="display:none">
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Assigned</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>End Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="proj-table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div id="proj-calendar-view" style="display:none">
+        <div class="cal-nav">
+          <button onclick="prevMonth()">← Prev</button>
+          <div class="cal-month" id="cal-month">June 2026</div>
+          <button onclick="nextMonth()">Next →</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+    </div>
+    
+    <div id="pane-pipeline" class="pane">
+      <h2 style="font-size:16px;margin-bottom:1.5rem">CRM Pipeline</h2>
+      <div id="pipeline-content"></div>
+    </div>
+    
+    <div id="pane-add" class="pane">
+      <h2 style="font-size:16px;margin-bottom:1.5rem">Add Contact</h2>
+      <div id="add-form"></div>
+    </div>
+    
+    <div id="pane-health" class="pane">
+      <h2 style="font-size:16px;margin-bottom:1.5rem">Pipeline Health</h2>
+      <div id="health-content"></div>
+    </div>
+    
+    <div id="pane-setup" class="pane">
+      <h2 style="font-size:16px;margin-bottom:1.5rem">System Setup</h2>
+      <div class="form-wrap">
+        <div class="form-title">Backend URLs</div>
+        <div class="f">
+          <label>LinkedIn</label>
+          <input id="setup-li" type="text">
+        </div>
+        <div class="f">
+          <label>Travel</label>
+          <input id="setup-tp" type="text">
+        </div>
+        <div class="f">
+          <label>Press</label>
+          <input id="setup-pr" type="text">
+        </div>
+        <div class="f">
+          <label>Website</label>
+          <input id="setup-wb" type="text">
+        </div>
+        <div class="f">
+          <label>Projects</label>
+          <input id="setup-proj" type="text">
+        </div>
+        <button class="btn btn-pri" onclick="updateSetupUrls()">Update URLs</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let ME = 'REUBEN';
+let LI_URL = '';
+let TP_URL = '';
+let PR_URL = '';
+let WB_URL = '';
+let PROJ_URL = '';
+let allData = {li: [], tp: [], pr: [], wb: [], projects: []};
+let currentPipe = 'li';
+let projectFilter = 'all';
+let projectView = 'list';
+let currentMonth = new Date();
+let notifications = [];
+
+const CATEGORY_EMOJI = {
+  'engineering': '⚙️',
+  'marketing': '📢',
+  'sales': '💼',
+  'legal': '⚖️',
+  'partnerships': '🤝',
+  'misc': '📌'
+};
+
+function getCatEmoji(cat) {
+  return CATEGORY_EMOJI[cat.toLowerCase()] || '📌';
+}
+
+function selectUser(u) {
+  ME = u;
+  document.querySelectorAll('.user-btn').forEach(el => el.classList.remove('sel'));
+  event.target.classList.add('sel');
+}
+
+function handleLogin() {
+  if (!ME) {
+    alert('Please select a user');
+    return;
+  }
+  const u = {
+    li: document.getElementById('li-url').value,
+    tp: document.getElementById('tp-url').value,
+    pr: document.getElementById('pr-url').value,
+    wb: document.getElementById('wb-url').value,
+    proj: document.getElementById('proj-url').value
+  };
+  LI_URL = u.li;
+  TP_URL = u.tp;
+  PR_URL = u.pr;
+  WB_URL = u.wb;
+  PROJ_URL = u.proj;
+  localStorage.setItem('koth_me', ME);
+  localStorage.setItem('koth_li_url', LI_URL);
+  localStorage.setItem('koth_tp_url', TP_URL);
+  localStorage.setItem('koth_pr_url', PR_URL);
+  localStorage.setItem('koth_wb_url', WB_URL);
+  localStorage.setItem('koth_proj_url', PROJ_URL);
+  showApp();
+  if (LI_URL || TP_URL || PR_URL || WB_URL || PROJ_URL) {
+    fullSync();
+  }
+}
+
+function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  updateUserPill();
+}
+
+function updateUserPill() {
+  const p = document.getElementById('user-pill');
+  p.textContent = ME;
+  const c = ME[0];
+  p.className = 'owner-pill owner-' + c.toLowerCase();
+}
+
+function logout() {
+  if (confirm('Logout?')) {
+    ['koth_me', 'koth_li_url', 'koth_tp_url', 'koth_pr_url', 'koth_wb_url', 'koth_proj_url'].forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+}
+
+function goTab(t) {
+  const tabs = ['today', 'projects', 'pipeline', 'add', 'health', 'setup'];
+  document.querySelectorAll('.nav-tab').forEach((el, i) => el.classList.toggle('on', tabs[i] === t));
+  document.querySelectorAll('.pane').forEach(el => el.classList.remove('on'));
+  const pane = document.getElementById('pane-' + t);
+  if (pane) pane.classList.add('on');
+  if (t === 'projects') renderProjects();
+  if (t === 'today') renderToday();
+  if (t === 'setup') renderSetup();
+}
+
+function toggleNotifs() {
+  const p = document.getElementById('notif-panel');
+  p.classList.toggle('show');
+}
+
+function renderToday() {
+  const today = new Date().toISOString().slice(0, 10);
+  const due = allData.projects.filter(p => p.end_date && p.end_date <= today && p.status !== 'completed').sort((a, b) => new Date(a.end_date) - new Date(b.end_date));
+  const html = due.length ? due.map(p => `
+    <div class="proj-card ${p.assigned.toLowerCase()} ${p.end_date < today ? 'due' : ''}">
+      <div class="proj-head">
+        <div class="proj-title">${esc(p.title)}</div>
+        <div class="proj-badges">
+          <span class="bdg bdg-${p.assigned.toLowerCase()}">${p.assigned}</span>
+          <span class="bdg bdg-${p.priority}">${p.priority}</span>
+          <span class="bdg">${getCatEmoji(p.category)} ${p.category}</span>
+        </div>
+      </div>
+      <div class="proj-meta"><strong>${p.end_date}</strong></div>
+      <div class="proj-btns">
+        <button class="btn btn-sm" onclick="markProjectComplete('${p.id}')">Mark Complete</button>
+      </div>
+    </div>
+  `).join('') : '<div class="empty">No projects due today</div>';
+  document.getElementById('today-projects').innerHTML = html;
+}
+
+function toggleNewProject() {
+  const f = document.getElementById('new-project-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block') {
+    document.getElementById('proj-assign').value = ME;
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('proj-start').value = today;
+  }
+}
+
+function createProject() {
+  const title = document.getElementById('proj-title').value.trim();
+  const assigned = document.getElementById('proj-assign').value;
+  const start = document.getElementById('proj-start').value;
+  const end = document.getElementById('proj-end').value;
+  const priority = document.getElementById('proj-priority').value;
+  const category = document.getElementById('proj-category').value;
+  const status = document.getElementById('proj-status').value;
+  const desc = document.getElementById('proj-desc').value.trim();
+  
+  if (!title || !assigned || !start || !end) {
+    alert('Fill all required fields');
+    return;
+  }
+  
+  const p = {
+    id: 'proj_' + Date.now(),
+    title: title,
+    assigned: assigned,
+    start_date: start,
+    end_date: end,
+    priority: priority,
+    category: category,
+    status: status,
+    description: desc,
+    created_by: ME,
+    created_date: new Date().toISOString().slice(0, 10),
+    files: []
+  };
+  
+  allData.projects.push(p);
+  saveProjects();
+  toggleNewProject();
+  document.getElementById('proj-title').value = '';
+  document.getElementById('proj-desc').value = '';
+  renderProjects();
+  addNotification(ME + ' created project: ' + title);
+}
+
+function saveProjects() {
+  localStorage.setItem('koth_projects_cache', JSON.stringify(allData.projects));
+}
+
+function markProjectComplete(id) {
+  const p = allData.projects.find(x => x.id === id);
+  if (!p) return;
+  p.status = 'completed';
+  saveProjects();
+  addNotification(p.assigned + ' completed: ' + p.title);
+  renderProjects();
+  renderToday();
+}
+
+function filterProjects(cat) {
+  projectFilter = cat;
+  document.querySelectorAll('.table-filter .filter-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderProjects();
+}
+
+function setProjectView(v) {
+  projectView = v;
+  document.getElementById('proj-list-view').style.display = v === 'list' ? 'block' : 'none';
+  document.getElementById('proj-table-view').style.display = v === 'table' ? 'block' : 'none';
+  document.getElementById('proj-calendar-view').style.display = v === 'calendar' ? 'block' : 'none';
+  renderProjects();
+}
+
+function renderProjects() {
+  let filtered = allData.projects.filter(p => projectFilter === 'all' || p.category.toLowerCase() === projectFilter.toLowerCase());
+  
+  if (projectView === 'list') renderProjectList(filtered);
+  else if (projectView === 'table') renderProjectTable(filtered);
+  else if (projectView === 'calendar') renderProjectCalendar(filtered);
+}
+
+function renderProjectList(projects) {
+  const html = projects.length ? projects.map(p => {
+    const overdue = p.end_date < new Date().toISOString().slice(0, 10) && p.status !== 'completed';
+    return `
+    <div class="proj-card ${p.assigned.toLowerCase()} ${overdue ? 'due' : ''}">
+      <div class="proj-head">
+        <div class="proj-title">${esc(p.title)}</div>
+        <div class="proj-badges">
+          <span class="bdg bdg-${p.assigned.toLowerCase()}">${p.assigned}</span>
+          <span class="bdg bdg-${p.priority}">${p.priority}</span>
+          <span class="bdg">${getCatEmoji(p.category)} ${p.category}</span>
+        </div>
+      </div>
+      ${p.description ? '<div class="proj-meta">' + esc(p.description) + '</div>' : ''}
+      <div class="proj-meta"><strong>${p.start_date}</strong> → <strong>${p.end_date}</strong></div>
+      <div class="proj-progress">
+        <div class="proj-prog-bar" style="width:${p.status === 'completed' ? '100' : p.status === 'in_progress' ? '50' : '0'}%"></div>
+      </div>
+      <div class="proj-btns">
+        <button class="btn btn-sm" onclick="markProjectComplete('${p.id}')" ${p.status === 'completed' ? 'disabled' : ''}>Complete</button>
+      </div>
+    </div>
+    `;
+  }).join('') : '<div class="empty">No projects</div>';
+  document.getElementById('projects-list').innerHTML = html;
+}
+
+function renderProjectTable(projects) {
+  const rows = projects.map(p => {
+    const overdue = p.end_date < new Date().toISOString().slice(0, 10) && p.status !== 'completed';
+    return `
+    <tr style="background:${overdue ? 'rgba(217,79,79,0.05)' : ''}">
+      <td><strong>${esc(p.title)}</strong></td>
+      <td><span class="bdg bdg-${p.assigned.toLowerCase()}">${p.assigned}</span></td>
+      <td>${getCatEmoji(p.category)} ${p.category}</td>
+      <td><span class="bdg bdg-${p.priority}">${p.priority}</span></td>
+      <td>${p.status}</td>
+      <td>${p.end_date}</td>
+      <td><button class="btn btn-sm" onclick="markProjectComplete('${p.id}')" ${p.status === 'completed' ? 'disabled' : ''}>Done</button></td>
+    </tr>
+    `;
+  }).join('');
+  document.getElementById('proj-table-body').innerHTML = rows || '<tr><td colspan="7" style="text-align:center">No projects</td></tr>';
+}
+
+function renderProjectCalendar(projects) {
+  const y = currentMonth.getFullYear();
+  const m = currentMonth.getMonth();
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m + 1, 0);
+  const days = Array.from({length: last.getDate()}, (_, i) => i + 1);
+  const startDay = first.getDay();
+  
+  const month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][m];
+  document.getElementById('cal-month').textContent = month + ' ' + y;
+  
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let html = '';
+  
+  dayNames.forEach(d => {
+    html += '<div class="cal-header">' + d + '</div>';
+  });
+  
+  for (let i = 0; i < startDay; i++) {
+    html += '<div class="cal-day other-month"></div>';
+  }
+  
+  days.forEach(d => {
+    const dateStr = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const dayProjects = projects.filter(p => p.end_date === dateStr || p.start_date === dateStr);
+    const isToday = dateStr === new Date().toISOString().slice(0, 10);
+    
+    html += '<div class="cal-day ' + (isToday ? 'today' : '') + '">';
+    html += '<div class="cal-day-num">' + d + '</div>';
+    html += dayProjects.map(p => '<div class="cal-event ' + p.assigned.toLowerCase() + '" title="' + esc(p.title) + '">' + getCatEmoji(p.category) + ' ' + esc(p.title.substring(0, 12)) + '</div>').join('');
+    html += '</div>';
+  });
+  
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+function prevMonth() {
+  currentMonth.setMonth(currentMonth.getMonth() - 1);
+  renderProjects();
+}
+
+function nextMonth() {
+  currentMonth.setMonth(currentMonth.getMonth() + 1);
+  renderProjects();
+}
+
+function addNotification(msg) {
+  const n = {
+    id: 'notif_' + Date.now(),
+    message: msg,
+    timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
+    read: false
+  };
+  notifications.unshift(n);
+  if (notifications.length > 50) notifications.pop();
+  updateNotifCount();
+  renderNotifications();
+  localStorage.setItem('koth_notifs', JSON.stringify(notifications));
+}
+
+function updateNotifCount() {
+  const unread = notifications.filter(n => !n.read).length;
+  const c = document.getElementById('notif-count');
+  if (unread > 0) {
+    c.textContent = unread;
+    c.style.display = 'flex';
+  } else {
+    c.style.display = 'none';
+  }
+}
+
+function renderNotifications() {
+  const html = notifications.length ? notifications.map(n => `
+    <div class="notif-item">
+      <div>${n.message}</div>
+      <div class="notif-item-time">${n.timestamp}</div>
+    </div>
+  `).join('') : '<div class="notif-empty">No notifications</div>';
+  document.getElementById('notif-list').innerHTML = html;
+}
+
+function renderSetup() {
+  document.getElementById('setup-li').value = LI_URL;
+  document.getElementById('setup-tp').value = TP_URL;
+  document.getElementById('setup-pr').value = PR_URL;
+  document.getElementById('setup-wb').value = WB_URL;
+  document.getElementById('setup-proj').value = PROJ_URL;
+}
+
+function updateSetupUrls() {
+  LI_URL = document.getElementById('setup-li').value;
+  TP_URL = document.getElementById('setup-tp').value;
+  PR_URL = document.getElementById('setup-pr').value;
+  WB_URL = document.getElementById('setup-wb').value;
+  PROJ_URL = document.getElementById('setup-proj').value;
+  localStorage.setItem('koth_li_url', LI_URL);
+  localStorage.setItem('koth_tp_url', TP_URL);
+  localStorage.setItem('koth_pr_url', PR_URL);
+  localStorage.setItem('koth_wb_url', WB_URL);
+  localStorage.setItem('koth_proj_url', PROJ_URL);
+  alert('URLs updated!');
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+(function() {
+  const m = localStorage.getItem('koth_me');
+  const liu = localStorage.getItem('koth_li_url') || '';
+  const tpu = localStorage.getItem('koth_tp_url') || '';
+  const pru = localStorage.getItem('koth_pr_url') || '';
+  const wbu = localStorage.getItem('koth_wb_url') || '';
+  const pju = localStorage.getItem('koth_proj_url') || '';
+  
+  if (m) {
+    ME = m;
+    LI_URL = liu;
+    TP_URL = tpu;
+    PR_URL = pru;
+    WB_URL = wbu;
+    PROJ_URL = pju;
+    document.getElementById('li-url').value = liu;
+    document.getElementById('tp-url').value = tpu;
+    document.getElementById('pr-url').value = pru;
+    document.getElementById('wb-url').value = wbu;
+    document.getElementById('proj-url').value = pju;
+    showApp();
+  }
+  
+  const saved = localStorage.getItem('koth_notifs');
+  if (saved) notifications = JSON.parse(saved);
+  updateNotifCount();
+})();
+</script>
+</body>
+</html>
